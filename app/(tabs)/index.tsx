@@ -2,8 +2,28 @@ import { router } from "expo-router";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { usePantry } from "../../context/PantryContext";
 
+function getExpirationStatus(date: string) {
+  const today = new Date();
+  const exp = new Date(date);
+
+  const diff = Math.ceil(
+    (exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+  );
+
+  if (diff < 0) return "Expired";
+  if (diff === 0) return "Expires Today";
+  if (diff <= 3) return `Expires in ${diff} days`;
+
+  return "";
+}
+
 export default function PantryScreen() {
   const { pantryItems } = usePantry();
+  const sortedItems = [...pantryItems].sort(
+    (a, b) =>
+      new Date(a.expirationDate).getTime() -
+      new Date(b.expirationDate).getTime(),
+  );
 
   return (
     <View style={styles.container}>
@@ -14,12 +34,18 @@ export default function PantryScreen() {
       </Pressable>
 
       <FlatList
-        data={pantryItems}
+        data={sortedItems}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.card}>
             <Text style={styles.item}>{item.name}</Text>
+
             <Text>Expires: {item.expirationDate}</Text>
+
+            <Text style={{ color: "red", fontWeight: "bold" }}>
+              {getExpirationStatus(item.expirationDate)}
+            </Text>
+
             <Text>Quantity: {item.quantity}</Text>
             <Text>Category: {item.category}</Text>
           </View>
